@@ -5,7 +5,6 @@ async function main() {
   try {
     const manager = new DeviceManager();
     const docks = await manager.enumerate();
-    // manager.listen();
     console.log(`Found ${docks.length} Stream Dock(s).\n`);
     for (const dock of docks) {
       dock.open();

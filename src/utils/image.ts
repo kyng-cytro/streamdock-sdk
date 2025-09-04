@@ -11,7 +11,7 @@ type ImageFormat = {
 
 export const processImage = async (path: string, format: ImageFormat) => {
   try {
-    if (!file(path).exists()) {
+    if (!(await file(path).exists())) {
       console.error("[process-image] File does not exist:", path);
       return null;
     }
