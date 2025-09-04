@@ -7,7 +7,7 @@ const main = async () => {
   for (const device of devices) {
     device.open();
     device.init();
-    device.setKeyCallback((deck, key, state) => {
+    device.setKeyCallback((_deck, key, state) => {
       console.log(key, state);
     });
   }
