@@ -19,6 +19,7 @@ export class StreamDock {
    * Represents a physically attached StreamDock device.
    */
 
+  keyMap: boolean = false;
   protected device: DeviceInfo;
   private keyCallback?: KeyCallback;
   private readThread?: NodeJS.Timeout;
@@ -146,8 +147,8 @@ export class StreamDock {
           if (data.key === 255) {
             console.log("[write] Successful");
           } else {
-            const mappedKey = this.mapKey(data.key);
             let newState = data.status;
+            const mappedKey = this.keyMap ? this.mapKey(data.key) : data.key;
             if (this.keyCallback) {
               this.keyCallback(this, mappedKey, newState);
             }

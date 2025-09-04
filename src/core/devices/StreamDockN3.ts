@@ -43,18 +43,18 @@ export class StreamDockN3 extends StreamDock {
 
   private keyImageFormat() {
     return {
-      size: [64, 64] as const,
-      format: "JPEG",
       rotation: 90,
+      format: "JPEG",
+      size: [64, 64] as const,
       flip: [false, false] as const,
     };
   }
 
   private touchscreenImageFormat() {
     return {
-      size: [320, 240] as const,
-      format: "JPEG",
       rotation: 90,
+      format: "JPEG",
+      size: [320, 240] as const,
       flip: [false, false] as const,
     };
   }

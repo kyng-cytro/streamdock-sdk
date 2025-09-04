@@ -14,7 +14,7 @@ async function main() {
         console.log(`Key ${k} state ${s}`);
       });
       if (dock instanceof StreamDockN3) {
-        dock.setTouchscreenImage("touchscreen.png");
+        dock.setKeyImage("touchscreen.png", 1);
       }
     }
   } catch (e) {
