@@ -2,9 +2,26 @@ import type { StreamDock } from "@core/devices/StreamDock";
 import { products } from "@core/ProductsIDs";
 import type { DeviceTransport } from "@core/transport/DeviceTransport";
 import { LibUSBHIDTransport } from "@core/transport/LibUSBHIDTransport";
+import { EventEmitter } from "events";
 import * as HID from "node-hid";
 
-export class DeviceManager {
+export interface DeviceManagerEvents {
+  deviceAdded: (device: StreamDock) => void;
+  deviceRemoved: (device: StreamDock) => void;
+}
+
+export declare interface DeviceManager {
+  on<U extends keyof DeviceManagerEvents>(
+    event: U,
+    listener: DeviceManagerEvents[U],
+  ): this;
+  emit<U extends keyof DeviceManagerEvents>(
+    event: U,
+    ...args: Parameters<DeviceManagerEvents[U]>
+  ): boolean;
+}
+
+export class DeviceManager extends EventEmitter {
   private transport: DeviceTransport;
   private devices: StreamDock[] = [];
 
@@ -13,6 +30,7 @@ export class DeviceManager {
   }
 
   constructor(transport?: DeviceTransport) {
+    super();
     this.transport = transport || DeviceManager._getTransport();
   }
 
@@ -43,21 +61,21 @@ export class DeviceManager {
             info.vendorId,
             info.productId,
           );
-          const newDevices = foundDevices.map(
-            (device) => new DeviceClass(this.transport, device),
-          );
-          this.devices.push(...newDevices);
+          for (const device of foundDevices) {
+            const dev = new DeviceClass(this.transport, device);
+            this.devices.push(dev);
+            this.emit("deviceAdded", dev);
+          }
         }
       }
-      console.log("[added] new devices");
     };
 
     const onDetach = (info: HID.Device) => {
       for (const device of this.devices) {
         const { vendorId, productId } = device.getInfo();
         if (vendorId == info.vendorId && productId == info.productId) {
-          console.log("[removed] path:", device.getPath());
           this.devices.splice(this.devices.indexOf(device), 1);
+          this.emit("deviceRemoved", device);
           break;
         }
       }

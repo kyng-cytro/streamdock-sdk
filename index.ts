@@ -1,16 +1,27 @@
-import { DeviceManager } from "./src";
+import { DeviceManager, type StreamDock } from "./src";
+
+const setupDevice = async (device: StreamDock) => {
+  device.open();
+  device.init();
+  device.setKeyCallback((_deck, key, state) => {
+    console.log(key, state);
+  });
+};
 
 const main = async () => {
   const deviceManager = new DeviceManager();
   const devices = await deviceManager.enumerate();
-  if (!devices.length) return;
   for (const device of devices) {
-    device.open();
-    device.init();
-    device.setKeyCallback((_deck, key, state) => {
-      console.log(key, state);
-    });
+    await setupDevice(device);
   }
+  deviceManager.on("deviceAdded", (device) => {
+    console.log("device added", device.getInfo());
+    setupDevice(device);
+  });
+  deviceManager.on("deviceRemoved", (device) => {
+    console.log("device removed", device.getInfo());
+  });
+  deviceManager.listen();
 };
 
 main();
