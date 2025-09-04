@@ -13,7 +13,7 @@
   "scripts": {
     "test": "bun test",
     "dev": "bun run src/index.ts",
-    "build": "bun build src/index.ts --outdir=dist dist"
+    "build": "bun build src/index.ts --outdir=dist"
   },
   "type": "module",
   "types": "dist/index.d.ts",

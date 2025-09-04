@@ -1,11 +1,11 @@
 {
   "compilerOptions": {
     // Environment setup & latest features
-    "lib": ["ESNext"],
-    "target": "ESNext",
-    "module": "Preserve",
-    "moduleDetection": "force",
     "allowJs": true,
+    "lib": ["ESNext"],
+    "target": "es2022",
+    "module": "esnext",
+    "moduleDetection": "force",
 
     // Bundler mode
     "noEmit": true,
@@ -25,17 +25,20 @@
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
 
-    // Some stricter flags (disabled by default)
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noPropertyAccessFromIndexSignature": false,
-
+    // Path aliases
+    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
       "@core/*": ["./src/core/*"],
+      "@types/*": ["./src/types/*"],
       "@utils/*": ["./src/utils/*"]
-    }
+    },
+
+    // Some stricter flags (disabled by default)
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noPropertyAccessFromIndexSignature": false
   },
-  "include": ["src"],
+  "include": ["src", "index.ts"],
   "exclude": ["dist", "test", "node_modules"]
 }

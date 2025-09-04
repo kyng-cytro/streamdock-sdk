@@ -1,7 +1,5 @@
-import type {
-  DeviceInfo,
-  DeviceTransport,
-} from "@core/transport/DeviceTransport";
+import type { DeviceInfo } from "@/types";
+import type { DeviceTransport } from "@core/transport/DeviceTransport";
 
 type KeyCallback = (deck: StreamDock, key: number, state: number) => void;
 type AsyncKeyCallback = (
@@ -126,13 +124,6 @@ export class StreamDock {
       console.error("[close] Error closing device:", error);
       throw error;
     }
-  }
-
-  /**
-   * Can be used with 'with' statement in TypeScript
-   */
-  async [Symbol.asyncDispose](): Promise<void> {
-    await this.close();
   }
 
   private mapKey(k: number): number {

@@ -1,13 +1,14 @@
+import type { DeviceInfo } from "@/types";
 import {
   StreamDock,
-  StreamDockN1,
-  StreamDockN3,
-  StreamDockN4,
   StreamDock293,
   StreamDock293s,
   StreamDock293V3,
+  StreamDockN1,
+  StreamDockN3,
+  StreamDockN4,
 } from "@core/devices";
-import type { DeviceInfo, DeviceTransport } from "./transport/DeviceTransport";
+import type { DeviceTransport } from "@core/transport/DeviceTransport";
 
 export enum USBVendorIDs {
   USB_VID_293 = 0x5500,

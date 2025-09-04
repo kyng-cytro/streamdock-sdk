@@ -2,10 +2,10 @@ import {
   DeviceError,
   DeviceMode,
   DeviceStatus,
-  DeviceTransport,
   type DeviceInfo,
   type ReadResult,
-} from "@core/transport/DeviceTransport";
+} from "@/types";
+import { DeviceTransport } from "@core/transport/DeviceTransport";
 import {
   CString,
   dlopen,
@@ -275,7 +275,7 @@ export class LibUSBHIDTransport extends DeviceTransport {
     return new TextDecoder().decode(slice);
   }
 
-  private encode(value: any): Buffer<ArrayBuffer> {
+  private encode(value: any): Buffer {
     return Buffer.from(new TextEncoder().encode(value));
   }
 

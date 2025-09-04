@@ -1,13 +1,7 @@
+import type { ImageFormat } from "@/types";
 import { file } from "bun";
 import { randomInt } from "node:crypto";
 import sharp from "sharp";
-
-type ImageFormat = {
-  format: string;
-  rotation: number;
-  size: readonly [number, number];
-  flip: readonly [boolean, boolean];
-};
 
 export const processImage = async (path: string, format: ImageFormat) => {
   try {

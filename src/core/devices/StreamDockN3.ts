@@ -1,10 +1,7 @@
+import { DeviceStatus, type DeviceInfo } from "@/types";
 import { processImage } from "@/utils/image";
 import { StreamDock } from "@core/devices/StreamDock";
-import {
-  DeviceStatus,
-  type DeviceInfo,
-  type DeviceTransport,
-} from "@core/transport/DeviceTransport";
+import { type DeviceTransport } from "@core/transport/DeviceTransport";
 
 export class StreamDockN3 extends StreamDock {
   constructor(transport: DeviceTransport, deviceInfo: DeviceInfo) {

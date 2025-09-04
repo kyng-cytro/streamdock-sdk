@@ -1,25 +1,11 @@
-import { DeviceManager } from "@core/DeviceManager";
-import { StreamDockN3 } from "@/core/devices";
-
-async function main() {
-  try {
-    const manager = new DeviceManager();
-    const docks = await manager.enumerate();
-    console.log(`Found ${docks.length} Stream Dock(s).\n`);
-    for (const dock of docks) {
-      dock.open();
-      dock.init();
-      dock.setKeyCallback((_, k, s) => {
-        console.log(`Key ${k} state ${s}`);
-      });
-      if (dock instanceof StreamDockN3) {
-        dock.setKeyImage("touchscreen.png", 1);
-      }
-    }
-  } catch (e) {
-    console.error(e);
-  } finally {
-  }
-}
-
-main();
+export * from "@/types";
+export { DeviceManager } from "@/core/DeviceManager";
+export {
+  StreamDock,
+  StreamDock293,
+  StreamDock293s,
+  StreamDock293V3,
+  StreamDockN1,
+  StreamDockN3,
+  StreamDockN4,
+} from "@/core/devices";
