@@ -12,7 +12,11 @@ const main = async () => {
   const deviceManager = new DeviceManager();
   const monitor = await deviceManager.listen({ emitExisting: true });
   monitor.on("added", async (device) => {
+    console.log("Device added", device.getInfo().path);
     setupDevice(device);
+  });
+  monitor.on("removed", (device) => {
+    console.log("Device removed", device.getInfo().path);
   });
 };
 

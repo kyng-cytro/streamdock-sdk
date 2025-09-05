@@ -70,13 +70,18 @@ export class DeviceManager {
           for (const dev of foundDevices) {
             const device = new DeviceClass(this.#transport, dev);
             const path = device.getInfo().path;
-            // Skip devices with the same path
             if (this.#devices.some((d) => d.getInfo().path === path)) continue;
             this.#devices.push(device);
             monitor.emit("added", device);
           }
         }
       }
+    };
+
+    const onDetach = (device: StreamDock) => {
+      // TODO: figure out why it crashes when reconneted (saved events?)
+      this.#devices.splice(this.#devices.indexOf(device), 1);
+      monitor.emit("removed", device);
     };
 
     // First handle all devices that are already connected
@@ -89,12 +94,17 @@ export class DeviceManager {
 
     const interval = setInterval(async () => {
       const all = HID.devices();
-      const wanted = all
-        .filter((d) => d.usagePage !== undefined && d.usagePage >= 0xff00)
-        .filter((d) =>
-          products.some((p) => d.vendorId == p[0] && d.productId == p[1]),
-        );
+      const wanted = all.filter((d) =>
+        products.some((p) => d.vendorId == p[0] && d.productId == p[1]),
+      );
       wanted.map((info) => onAttach(info));
+      // Check for devices that are no longer connected
+      for (const device of this.#devices) {
+        const { productId, vendorId } = device.getInfo();
+        const devices = await this.#transport.enumerate(vendorId, productId);
+        if (devices.length) continue;
+        onDetach(device);
+      }
     }, 1000);
 
     const cleanup = () => {

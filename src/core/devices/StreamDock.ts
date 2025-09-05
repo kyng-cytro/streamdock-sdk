@@ -117,7 +117,6 @@ export class StreamDock {
         clearInterval(this.readThread);
         this.readThread = undefined;
       }
-      await this.clearAllIcons();
       await this.disconnect();
       await this.transport.close();
     } catch (error) {
