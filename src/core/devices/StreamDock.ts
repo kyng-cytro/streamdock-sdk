@@ -85,7 +85,7 @@ export class StreamDock {
     return this.transport.keyAllClear();
   }
 
-  disconnected() {
+  disconnect() {
     return this.transport.disconnected();
   }
 
@@ -118,7 +118,7 @@ export class StreamDock {
         this.readThread = undefined;
       }
       await this.clearAllIcons();
-      await this.disconnected();
+      await this.disconnect();
       await this.transport.close();
     } catch (error) {
       console.error("[close] Error closing device:", error);
@@ -148,7 +148,6 @@ export class StreamDock {
       } catch (error) {
         this.runReadThread = false;
         await this.close();
-        console.error("[read] Read error:", error);
       }
     }
   }

@@ -6,8 +6,8 @@ import { EventEmitter } from "events";
 import * as HID from "node-hid";
 
 export interface DeviceMonitorEvents {
-  test: () => void;
   added: (device: StreamDock) => void;
+  removed: (device: StreamDock) => void;
 }
 
 export class DeviceMonitor extends EventEmitter {
@@ -55,8 +55,11 @@ export class DeviceManager {
     return this.#devices;
   }
 
-  async listen(): Promise<DeviceMonitor> {
+  async listen({
+    emitExisting,
+  }: { emitExisting?: boolean } = {}): Promise<DeviceMonitor> {
     const monitor = new DeviceMonitor(() => cleanup());
+
     const onAttach = async (info: HID.Device) => {
       for (const [vid, pid, DeviceClass] of products) {
         if (vid == info.vendorId && pid == info.productId) {
@@ -76,12 +79,13 @@ export class DeviceManager {
       }
     };
 
-    monitor.emit("test");
-    // Enumerate existing devices first
-    // const devices = await this.enumerate();
-    // for (const device of devices) {
-    //   monitor.emit("added", device);
-    // }
+    // First handle all devices that are already connected
+    const existingDevices = await this.enumerate();
+    if (emitExisting) {
+      for (const device of existingDevices) {
+        process.nextTick(() => monitor.emit("added", device));
+      }
+    }
 
     const interval = setInterval(async () => {
       const all = HID.devices();
@@ -92,6 +96,7 @@ export class DeviceManager {
         );
       wanted.map((info) => onAttach(info));
     }, 1000);
+
     const cleanup = () => {
       clearInterval(interval);
       for (const device of this.#devices) {

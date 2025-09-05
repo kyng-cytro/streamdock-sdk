@@ -3,25 +3,17 @@ import { DeviceManager, type StreamDock } from "./src";
 const setupDevice = async (device: StreamDock) => {
   device.open();
   device.init();
-  device.setKeyCallback((deck, key, state) => {
-    console.log("key", key, state);
+  device.setKeyCallback((_deck, key, state) => {
+    console.log("The key", key, "was pressed", state);
   });
 };
 
 const main = async () => {
   const deviceManager = new DeviceManager();
-  const monitor = await deviceManager.listen();
+  const monitor = await deviceManager.listen({ emitExisting: true });
   monitor.on("added", async (device) => {
-    console.log("device added");
-    // await setupDevice(device);
+    setupDevice(device);
   });
-  monitor.on("test", () => {
-    console.log("test");
-  });
-  // const monitor = await deviceManager.listen();
-  // monitor.on("added", (device) => {
-  //   console.log("device added");
-  // });
 };
 
 main();
