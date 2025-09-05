@@ -137,29 +137,29 @@ const FFIConfig = {
 };
 
 export class LibUSBHIDTransport extends DeviceTransport {
-  private symbols: any;
-  private transport: number;
-  private isDeviceOpen: boolean = false;
+  #symbols: any;
+  #transport: number;
+  #isDeviceOpen: boolean = false;
 
   constructor() {
     super();
     const { symbols } = this.initializeFFI();
-    this.symbols = symbols;
-    this.transport = this.symbols.TranSport_new();
+    this.#symbols = symbols;
+    this.#transport = this.#symbols.TranSport_new();
   }
 
   async open(path: string): Promise<void> {
-    this.isDeviceOpen = true;
-    return this.symbols.TranSport_open_(this.transport, this.encode(path));
+    this.#isDeviceOpen = true;
+    return this.#symbols.TranSport_open_(this.#transport, this.encode(path));
   }
 
   async close(): Promise<void> {
-    this.symbols.TranSport_close(this.transport);
+    this.#symbols.TranSport_close(this.#transport);
   }
 
   async read(length: number = 13): Promise<ReadResult> {
     this.assertDeviceOpen();
-    const result = this.symbols.TranSport_read_(this.transport, length);
+    const result = this.#symbols.TranSport_read_(this.#transport, length);
     if (!result) {
       throw new DeviceError("Failed to read from device", DeviceStatus.ERROR);
     }
@@ -168,7 +168,7 @@ export class LibUSBHIDTransport extends DeviceTransport {
     const okResponse = this.parseCString(buffer.subarray(5, 7));
     const key = buffer[9] as number;
     const status = buffer[10] as number;
-    this.symbols.TranSport_deleteRead_(result);
+    this.#symbols.TranSport_deleteRead_(result);
     return {
       key,
       status,
@@ -180,12 +180,16 @@ export class LibUSBHIDTransport extends DeviceTransport {
 
   async write(data: Uint8Array, length: number): Promise<number> {
     this.assertDeviceOpen();
-    return this.symbols.TranSport_write(this.transport, ptr(data), length);
+    return this.#symbols.TranSport_write(this.#transport, ptr(data), length);
   }
 
   async enumerate(vid: number, pid: number): Promise<DeviceInfo[]> {
     const devices: DeviceInfo[] = [];
-    const enumPtr = this.symbols.TranSport_enumerate(this.transport, vid, pid);
+    const enumPtr = this.#symbols.TranSport_enumerate(
+      this.#transport,
+      vid,
+      pid,
+    );
     if (!enumPtr) return devices;
     let currentPtr = enumPtr;
     while (currentPtr) {
@@ -194,36 +198,39 @@ export class LibUSBHIDTransport extends DeviceTransport {
         productId: pid,
         path: this.readPath(currentPtr),
       });
-      currentPtr = this.symbols.next;
+      currentPtr = this.#symbols.next;
     }
-    this.symbols.TranSport_freeEnumerate(this.transport, enumPtr);
+    this.#symbols.TranSport_freeEnumerate(this.#transport, enumPtr);
     return devices;
   }
 
   async setBrightness(percent: number): Promise<number> {
     this.assertDeviceOpen();
-    return this.symbols.TranSport_setBrightness(this.transport, percent);
+    return this.#symbols.TranSport_setBrightness(this.#transport, percent);
   }
 
   async wakeScreen(): Promise<number> {
     this.assertDeviceOpen();
-    return this.symbols.TranSport_wakeScreen(this.transport);
+    return this.#symbols.TranSport_wakeScreen(this.#transport);
   }
 
   async refresh(): Promise<number> {
     this.assertDeviceOpen();
-    return this.symbols.TranSport_refresh(this.transport);
+    return this.#symbols.TranSport_refresh(this.#transport);
   }
 
   async switchMode(mode: keyof typeof DeviceMode): Promise<number> {
     this.assertDeviceOpen();
-    return this.symbols.TranSport_switchMode(this.transport, DeviceMode[mode]);
+    return this.#symbols.TranSport_switchMode(
+      this.#transport,
+      DeviceMode[mode],
+    );
   }
 
   async setBackgroundImg(buffer: Uint8Array, size: number): Promise<number> {
     this.assertDeviceOpen();
-    return this.symbols.TranSport_setBackgroundImg(
-      this.transport,
+    return this.#symbols.TranSport_setBackgroundImg(
+      this.#transport,
       ptr(buffer),
       size,
     );
@@ -231,16 +238,16 @@ export class LibUSBHIDTransport extends DeviceTransport {
 
   async setBackgroundImgDualDevice(path: string): Promise<number> {
     this.assertDeviceOpen();
-    return this.symbols.TranSport_setBackgroundImgDualDevice(
-      this.transport,
+    return this.#symbols.TranSport_setBackgroundImgDualDevice(
+      this.#transport,
       Buffer.from(this.encode(path)),
     );
   }
 
   async setKeyImg(path: string, key: number): Promise<number> {
     this.assertDeviceOpen();
-    return this.symbols.TranSport_setKeyImg(
-      this.transport,
+    return this.#symbols.TranSport_setKeyImg(
+      this.#transport,
       Buffer.from(this.encode(path)),
       key,
     );
@@ -248,8 +255,8 @@ export class LibUSBHIDTransport extends DeviceTransport {
 
   async setKeyImgDualDevice(path: string, key: number): Promise<number> {
     this.assertDeviceOpen();
-    return this.symbols.TranSport_setKeyImgDualDevice(
-      this.transport,
+    return this.#symbols.TranSport_setKeyImgDualDevice(
+      this.#transport,
       Buffer.from(this.encode(path)),
       key,
     );
@@ -257,8 +264,8 @@ export class LibUSBHIDTransport extends DeviceTransport {
 
   async setKeyImgDataDualDevice(path: string, key: number): Promise<number> {
     this.assertDeviceOpen();
-    return this.symbols.TranSport_setKeyImgDataDualDevice(
-      this.transport,
+    return this.#symbols.TranSport_setKeyImgDataDualDevice(
+      this.#transport,
       Buffer.from(this.encode(path)),
       key,
     );
@@ -266,27 +273,27 @@ export class LibUSBHIDTransport extends DeviceTransport {
 
   async keyClear(index: number): Promise<number> {
     this.assertDeviceOpen();
-    return this.symbols.TranSport_keyClear(this.transport, index);
+    return this.#symbols.TranSport_keyClear(this.#transport, index);
   }
 
   async keyAllClear(): Promise<number> {
     this.assertDeviceOpen();
-    return this.symbols.TranSport_keyAllClear(this.transport);
+    return this.#symbols.TranSport_keyAllClear(this.#transport);
   }
 
   async getInputReport(length: number): Promise<Uint8Array> {
     this.assertDeviceOpen();
     return new Uint8Array(
-      this.symbols.TranSport_getInputReport(this.transport, length),
+      this.#symbols.TranSport_getInputReport(this.#transport, length),
     );
   }
 
   async disconnected(): Promise<number> {
-    return this.symbols.TranSport_disconnected(this.transport);
+    return this.#symbols.TranSport_disconnected(this.#transport);
   }
 
   private assertDeviceOpen() {
-    if (!this.isDeviceOpen) {
+    if (!this.#isDeviceOpen) {
       throw new DeviceError("Device is not open", DeviceStatus.ERROR);
     }
   }

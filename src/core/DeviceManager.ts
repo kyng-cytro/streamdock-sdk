@@ -5,81 +5,83 @@ import { LibUSBHIDTransport } from "@core/transport/LibUSBHIDTransport";
 import { EventEmitter } from "events";
 import * as HID from "node-hid";
 
-export interface DeviceManagerEvents {
-  deviceAdded: (device: StreamDock) => void;
-  deviceRemoved: (device: StreamDock) => void;
+export interface DeviceMonitorEvents {
+  test: () => void;
+  added: (device: StreamDock) => void;
 }
 
-export declare interface DeviceManager {
-  on<U extends keyof DeviceManagerEvents>(
+export class DeviceMonitor extends EventEmitter {
+  private closeHandler: () => void;
+  constructor(closeHandler: () => void) {
+    super();
+    this.closeHandler = closeHandler;
+  }
+  override on<U extends keyof DeviceMonitorEvents>(
     event: U,
-    listener: DeviceManagerEvents[U],
-  ): this;
-  emit<U extends keyof DeviceManagerEvents>(
-    event: U,
-    ...args: Parameters<DeviceManagerEvents[U]>
-  ): boolean;
+    listener: DeviceMonitorEvents[U],
+  ): this {
+    return super.on(event, listener);
+  }
+  close(): void {
+    this.removeAllListeners();
+    this.closeHandler();
+  }
 }
 
-export class DeviceManager extends EventEmitter {
-  private transport: DeviceTransport;
-  private devices: StreamDock[] = [];
+export class DeviceManager {
+  #transport: DeviceTransport;
+  #devices: StreamDock[] = [];
 
   private static _getTransport(): DeviceTransport {
     return new LibUSBHIDTransport();
   }
 
   constructor(transport?: DeviceTransport) {
-    super();
-    this.transport = transport || DeviceManager._getTransport();
+    this.#transport = transport || DeviceManager._getTransport();
+  }
+
+  getDevices(): StreamDock[] {
+    return this.#devices;
   }
 
   async enumerate(): Promise<StreamDock[]> {
     for (const [vid, pid, DeviceClass] of products) {
-      const foundDevices = await this.transport.enumerate(vid, pid);
+      const foundDevices = await this.#transport.enumerate(vid, pid);
       const newDevices = foundDevices.map(
-        (device) => new DeviceClass(this.transport, device),
+        (device) => new DeviceClass(this.#transport, device),
       );
-      this.devices.push(...newDevices);
+      this.#devices.push(...newDevices);
     }
-    return this.devices;
+    return this.#devices;
   }
 
-  async listen(): Promise<() => void> {
-    const tracked = new Map<string, { dev: HID.HID; info: HID.Device }>();
-
-    const makeKey = (d: {
-      vendorId: number;
-      productId: number;
-      path?: string;
-    }) => `${d.vendorId}:${d.productId}:${d.path}`;
-
+  async listen(): Promise<DeviceMonitor> {
+    const monitor = new DeviceMonitor(() => cleanup());
     const onAttach = async (info: HID.Device) => {
       for (const [vid, pid, DeviceClass] of products) {
         if (vid == info.vendorId && pid == info.productId) {
-          const foundDevices = await this.transport.enumerate(
+          const foundDevices = await this.#transport.enumerate(
             info.vendorId,
             info.productId,
           );
-          for (const device of foundDevices) {
-            const dev = new DeviceClass(this.transport, device);
-            this.devices.push(dev);
-            this.emit("deviceAdded", dev);
+          for (const dev of foundDevices) {
+            const device = new DeviceClass(this.#transport, dev);
+            const path = device.getInfo().path;
+            // Skip devices with the same path
+            if (this.#devices.some((d) => d.getInfo().path === path)) continue;
+            this.#devices.push(device);
+            monitor.emit("added", device);
           }
         }
       }
     };
 
-    const onDetach = (info: HID.Device) => {
-      for (const device of this.devices) {
-        const { vendorId, productId } = device.getInfo();
-        if (vendorId == info.vendorId && productId == info.productId) {
-          this.devices.splice(this.devices.indexOf(device), 1);
-          this.emit("deviceRemoved", device);
-          break;
-        }
-      }
-    };
+    monitor.emit("test");
+    // Enumerate existing devices first
+    // const devices = await this.enumerate();
+    // for (const device of devices) {
+    //   monitor.emit("added", device);
+    // }
 
     const interval = setInterval(async () => {
       const all = HID.devices();
@@ -88,43 +90,19 @@ export class DeviceManager extends EventEmitter {
         .filter((d) =>
           products.some((p) => d.vendorId == p[0] && d.productId == p[1]),
         );
-
-      // Handle new devices
-      for (const info of wanted) {
-        const key = makeKey(info);
-        if (!tracked.has(key)) {
-          try {
-            const dev = new HID.HID(info.path!);
-            tracked.set(key, { dev, info });
-            onAttach(info);
-            dev.on("error", () => {
-              dev.close();
-              tracked.delete(key);
-              onDetach(info);
-            });
-          } catch (err) {
-            console.error("[device-manager] Failed to open device", info, err);
-          }
-        }
-      }
-
-      // Handle detached devices
-      for (const [key, { dev, info }] of [...tracked.entries()]) {
-        if (!wanted.some((w) => makeKey(w) == key)) {
-          dev.close();
-          tracked.delete(key);
-          onDetach(info);
-        }
-      }
+      wanted.map((info) => onAttach(info));
     }, 1000);
-    return () => {
+    const cleanup = () => {
       clearInterval(interval);
-      for (const { dev } of tracked.values()) {
+      for (const device of this.#devices) {
         try {
-          dev.close();
-        } catch (e) {}
+          device.close();
+        } catch (e) {
+          console.error("[device-manager] Failed to close device", device, e);
+        }
       }
-      tracked.clear();
     };
+
+    return monitor;
   }
 }
