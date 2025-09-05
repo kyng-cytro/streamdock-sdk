@@ -79,10 +79,20 @@ main();
 const deviceManager = new DeviceManager();
 
 // Start monitoring for device connections/disconnections
-const cleanup = await deviceManager.listen();
+const mointor = await deviceManager.listen({ emitExisting: true });
 
-// Later, when you want to stop monitoring
-cleanup();
+// When a device is connected
+mointor.on("added", (device) => {
+  console.log("Device added", device.getInfo());
+});
+
+// Listen for device disconnections
+mointor.on("removed", (device) => {
+  console.log("Device removed", device.getInfo());
+});
+
+// Stop monitoring
+mointor.close();
 ```
 
 ### Setting Images
@@ -106,11 +116,18 @@ The main entry point for device discovery and management.
 
 ```typescript
 class DeviceManager {
+  // Get all connected devices
+  getDevices(): StreamDock[];
+
   // Find all connected devices
   async enumerate(): Promise<StreamDock[]>;
 
   // Monitor for device connections/disconnections
-  async listen(): Promise<() => void>;
+  async listen({
+    emitExisting,
+  }: {
+    emitExisting?: boolean;
+  }): Promise<DeviceMonitor>;
 }
 ```
 
@@ -141,6 +158,10 @@ class StreamDock {
   close(): Promise<void>;
 }
 ```
+
+## Known Issues
+
+- For some reason, reconnecting a device after it has been disconnected causes a crash similar to sending a read command before the device is open. I suspect this happens because the device is storing some unexecuted events that get triggered upon reconnection.
 
 ## License
 
